@@ -28,7 +28,17 @@ def create_tool(project_id: int, tool: schemas.ToolCreate, db: Session = Depends
     db.add(db_tool)
     db.commit()
     db.refresh(db_tool)
-    return db_tool
+    
+    return {
+        'id': db_tool.id,
+        'project_id': db_tool.project_id,
+        'name': db_tool.name,
+        'description': db_tool.description,
+        'input_schema': tool.input_schema or {},
+        'output_schema': db_tool.output_schema,
+        'handler_type': db_tool.handler_type,
+        'handler_code': db_tool.handler_code
+    }
 
 @router.get("/{project_id}/tools/", response_model=List[schemas.Tool])
 def read_tools(project_id: int, db: Session = Depends(get_db)):
@@ -36,13 +46,22 @@ def read_tools(project_id: int, db: Session = Depends(get_db)):
     
     result = []
     for t in tools:
-        t_dict = t.__dict__
+        input_schema = {}
         if t.input_schema:
             try:
-                t_dict['input_schema'] = json.loads(t.input_schema)
+                input_schema = json.loads(t.input_schema)
             except:
-                t_dict['input_schema'] = {}
-        result.append(t_dict)
+                input_schema = {}
+        result.append({
+            'id': t.id,
+            'project_id': t.project_id,
+            'name': t.name,
+            'description': t.description,
+            'input_schema': input_schema,
+            'output_schema': t.output_schema,
+            'handler_type': t.handler_type,
+            'handler_code': t.handler_code
+        })
     return result
 
 @router.put("/{project_id}/tools/{tool_id}", response_model=schemas.Tool)
@@ -67,14 +86,23 @@ def update_tool(project_id: int, tool_id: int, tool: schemas.ToolCreate, db: Ses
     db.refresh(db_tool)
     
     # Parse input_schema back to dict for response
-    result = db_tool.__dict__
+    input_schema = {}
     if db_tool.input_schema:
         try:
-            result['input_schema'] = json.loads(db_tool.input_schema)
+            input_schema = json.loads(db_tool.input_schema)
         except:
-            result['input_schema'] = {}
+            input_schema = {}
     
-    return result
+    return {
+        'id': db_tool.id,
+        'project_id': db_tool.project_id,
+        'name': db_tool.name,
+        'description': db_tool.description,
+        'input_schema': input_schema,
+        'output_schema': db_tool.output_schema,
+        'handler_type': db_tool.handler_type,
+        'handler_code': db_tool.handler_code
+    }
 
 @router.delete("/{project_id}/tools/{tool_id}")
 def delete_tool(project_id: int, tool_id: int, db: Session = Depends(get_db)):

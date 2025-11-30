@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Plus, Save, Trash2, Download, CheckCircle } from 'lucide-react';
+import { SchemaBuilder } from '@/components/SchemaBuilder';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -211,14 +212,14 @@ export default function ProjectBuilder() {
 }
 
 function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => void }) {
-    const [inputSchema, setInputSchema] = useState(JSON.stringify(tool.input_schema || {}, null, 2));
+    const [inputSchema, setInputSchema] = useState<any>(tool.input_schema || {});
     const [outputSchema, setOutputSchema] = useState(tool.output_schema || '');
     const [handlerCode, setHandlerCode] = useState(tool.handler_code || '');
     const [saving, setSaving] = useState(false);
 
     // Update local state when tool changes
     useEffect(() => {
-        setInputSchema(JSON.stringify(tool.input_schema || {}, null, 2));
+        setInputSchema(tool.input_schema || {});
         setOutputSchema(tool.output_schema || '');
         setHandlerCode(tool.handler_code || '');
     }, [tool.id]);
@@ -226,18 +227,9 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
     async function handleSave() {
         setSaving(true);
         try {
-            let parsedSchema = {};
-            try {
-                parsedSchema = JSON.parse(inputSchema);
-            } catch (e) {
-                alert("Invalid JSON for Input Schema");
-                setSaving(false);
-                return;
-            }
-
             const updatedTool: Tool = {
                 ...tool,
-                input_schema: parsedSchema,
+                input_schema: inputSchema,
                 output_schema: outputSchema,
                 handler_code: handlerCode
             };
@@ -261,18 +253,10 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
                 </Button>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto space-y-6 p-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Input Schema (JSON)
-                        <span className="ml-2 text-xs text-gray-500 font-normal">Define arguments (type, description)</span>
-                    </label>
-                    <textarea
-                        className="w-full h-48 font-mono text-sm p-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
-                        value={inputSchema}
-                        onChange={(e) => setInputSchema(e.target.value)}
-                        placeholder='{ "type": "object", "properties": { ... } }'
-                    />
-                </div>
+                <SchemaBuilder
+                    value={inputSchema}
+                    onChange={setInputSchema}
+                />
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
