@@ -20,7 +20,16 @@ def export_project(project_id: int, db: Session = Depends(get_db)):
     tools = db.query(models.Tool).filter(models.Tool.project_id == project_id).all()
     tools_data = []
     for t in tools:
-        t_dict = t.__dict__
+        t_dict = {
+            'id': t.id,
+            'project_id': t.project_id,
+            'name': t.name,
+            'description': t.description,
+            'input_schema': {},
+            'output_schema': t.output_schema,
+            'handler_type': t.handler_type,
+            'handler_code': t.handler_code
+        }
         if t.input_schema:
             try:
                 t_dict['input_schema'] = json.loads(t.input_schema)
