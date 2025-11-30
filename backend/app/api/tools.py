@@ -33,17 +33,6 @@ def create_tool(project_id: int, tool: schemas.ToolCreate, db: Session = Depends
 @router.get("/{project_id}/tools/", response_model=List[schemas.Tool])
 def read_tools(project_id: int, db: Session = Depends(get_db)):
     tools = db.query(models.Tool).filter(models.Tool.project_id == project_id).all()
-    # We need to parse the JSON strings back to dicts for the response if Pydantic expects dicts
-    # However, our Pydantic model has input_schema as Dict, but DB has Text.
-    # We might need a separate Pydantic model for DB reading or handle this in the route.
-    # Let's update the response model or handle conversion.
-    # Actually, Pydantic's orm_mode might not automatically parse JSON string to Dict.
-    # Let's fix this by manually converting or using a property in the model.
-    # For now, let's just return them and see if Pydantic handles it (it won't).
-    
-    # Better approach: Update the Pydantic model to use Json type or handle it here.
-    # Let's just return the objects and let Pydantic try, but it will likely fail.
-    # I'll modify the Pydantic schema in a separate step if needed, or do manual conversion here.
     
     result = []
     for t in tools:
@@ -54,6 +43,37 @@ def read_tools(project_id: int, db: Session = Depends(get_db)):
             except:
                 t_dict['input_schema'] = {}
         result.append(t_dict)
+    return result
+
+@router.put("/{project_id}/tools/{tool_id}", response_model=schemas.Tool)
+def update_tool(project_id: int, tool_id: int, tool: schemas.ToolCreate, db: Session = Depends(get_db)):
+    db_tool = db.query(models.Tool).filter(
+        models.Tool.id == tool_id, 
+        models.Tool.project_id == project_id
+    ).first()
+    
+    if db_tool is None:
+        raise HTTPException(status_code=404, detail="Tool not found")
+    
+    # Update tool fields
+    db_tool.name = tool.name
+    db_tool.description = tool.description
+    db_tool.input_schema = json.dumps(tool.input_schema) if tool.input_schema else None
+    db_tool.output_schema = tool.output_schema
+    db_tool.handler_type = tool.handler_type
+    db_tool.handler_code = tool.handler_code
+    
+    db.commit()
+    db.refresh(db_tool)
+    
+    # Parse input_schema back to dict for response
+    result = db_tool.__dict__
+    if db_tool.input_schema:
+        try:
+            result['input_schema'] = json.loads(db_tool.input_schema)
+        except:
+            result['input_schema'] = {}
+    
     return result
 
 @router.delete("/{project_id}/tools/{tool_id}")

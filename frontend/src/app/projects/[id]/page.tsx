@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Save, Trash2, Download, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Trash2, Download, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { getProject, getTools, createTool, deleteTool, getExportUrl, Project, Tool } from '@/lib/api';
+import { getProject, getTools, createTool, deleteTool, updateTool, getExportUrl, Project, Tool } from '@/lib/api';
 
 export default function ProjectBuilder() {
     const params = useParams();
@@ -17,14 +17,12 @@ export default function ProjectBuilder() {
     const [project, setProject] = useState<Project | null>(null);
     const [tools, setTools] = useState<Tool[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
 
     // New Tool State
     const [toolName, setToolName] = useState('');
     const [toolDescription, setToolDescription] = useState('');
     const [handlerType, setHandlerType] = useState('static');
-
-    // Validation State
-    const [errors, setErrors] = useState<string[]>([]);
 
     useEffect(() => {
         if (projectId) {
@@ -42,7 +40,6 @@ export default function ProjectBuilder() {
             setTools(toolsData);
         } catch (error) {
             console.error(error);
-            // router.push('/'); // Redirect if not found
         } finally {
             setLoading(false);
         }
@@ -53,7 +50,7 @@ export default function ProjectBuilder() {
         if (!toolName.trim()) return;
 
         try {
-            await createTool(projectId, {
+            const newTool = await createTool(projectId, {
                 name: toolName,
                 description: toolDescription,
                 handler_type: handlerType,
@@ -67,9 +64,10 @@ export default function ProjectBuilder() {
             setToolDescription('');
             setHandlerType('static');
 
-            // Reload tools
+            // Reload tools and select the new tool
             const toolsData = await getTools(projectId);
             setTools(toolsData);
+            setSelectedToolId(newTool.id);
         } catch (error) {
             console.error(error);
         }
@@ -81,8 +79,23 @@ export default function ProjectBuilder() {
             await deleteTool(projectId, toolId);
             const toolsData = await getTools(projectId);
             setTools(toolsData);
+            if (selectedToolId === toolId) {
+                setSelectedToolId(null);
+            }
         } catch (error) {
             console.error(error);
+        }
+    }
+
+    async function handleUpdateTool(updatedTool: Tool) {
+        try {
+            await updateTool(projectId, updatedTool.id, updatedTool);
+            // Update the tools state with the modified tool
+            setTools(prevTools => prevTools.map(tool =>
+                tool.id === updatedTool.id ? updatedTool : tool
+            ));
+        } catch (error) {
+            console.error("Error updating tool:", error);
         }
     }
 
@@ -156,7 +169,11 @@ export default function ProjectBuilder() {
                             <p className="text-sm text-gray-400 italic">No tools defined yet.</p>
                         )}
                         {tools.map((tool) => (
-                            <div key={tool.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center group hover:border-black transition-colors cursor-pointer">
+                            <div
+                                key={tool.id}
+                                className={`bg-white p-4 rounded-lg border shadow-sm flex justify-between items-center group hover:border-black transition-colors cursor-pointer ${selectedToolId === tool.id ? 'border-black ring-2 ring-black' : 'border-gray-200'}`}
+                                onClick={() => setSelectedToolId(tool.id)}
+                            >
                                 <div>
                                     <p className="font-medium text-gray-900">{tool.name}</p>
                                     <p className="text-xs text-gray-500 truncate max-w-[200px]">{tool.description || 'No description'}</p>
@@ -169,19 +186,120 @@ export default function ProjectBuilder() {
                     </div>
                 </div>
 
-                {/* Right Column: Tool Configuration (Placeholder for now) */}
+                {/* Right Column: Tool Configuration */}
                 <div className="lg:col-span-2">
-                    <Card className="h-full min-h-[500px] flex flex-col justify-center items-center text-center p-12 border-dashed">
-                        <div className="bg-gray-50 p-4 rounded-full mb-4">
-                            <CheckCircle className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-900">Select a tool to configure</h3>
-                        <p className="text-gray-500 max-w-md mt-2">
-                            Click on a tool from the list on the left to edit its input schema, output description, and handler logic.
-                        </p>
-                    </Card>
+                    {tools.find(t => t.id === selectedToolId) ? (
+                        <ToolEditor
+                            tool={tools.find(t => t.id === selectedToolId)!}
+                            onUpdate={handleUpdateTool}
+                        />
+                    ) : (
+                        <Card className="h-full min-h-[500px] flex flex-col justify-center items-center text-center p-12 border-dashed">
+                            <div className="bg-gray-50 p-4 rounded-full mb-4">
+                                <CheckCircle className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-900">Select a tool to configure</h3>
+                            <p className="text-gray-500 max-w-md mt-2">
+                                Click on a tool from the list on the left to edit its input schema, output description, and handler logic.
+                            </p>
+                        </Card>
+                    )}
                 </div>
             </main>
         </div>
+    );
+}
+
+function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => void }) {
+    const [inputSchema, setInputSchema] = useState(JSON.stringify(tool.input_schema || {}, null, 2));
+    const [outputSchema, setOutputSchema] = useState(tool.output_schema || '');
+    const [handlerCode, setHandlerCode] = useState(tool.handler_code || '');
+    const [saving, setSaving] = useState(false);
+
+    // Update local state when tool changes
+    useEffect(() => {
+        setInputSchema(JSON.stringify(tool.input_schema || {}, null, 2));
+        setOutputSchema(tool.output_schema || '');
+        setHandlerCode(tool.handler_code || '');
+    }, [tool.id]);
+
+    async function handleSave() {
+        setSaving(true);
+        try {
+            let parsedSchema = {};
+            try {
+                parsedSchema = JSON.parse(inputSchema);
+            } catch (e) {
+                alert("Invalid JSON for Input Schema");
+                setSaving(false);
+                return;
+            }
+
+            const updatedTool: Tool = {
+                ...tool,
+                input_schema: parsedSchema,
+                output_schema: outputSchema,
+                handler_code: handlerCode
+            };
+
+            await onUpdate(updatedTool);
+
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return (
+        <Card className="h-full flex flex-col">
+            <CardHeader className="border-b border-gray-100 flex flex-row items-center justify-between">
+                <CardTitle>{tool.name} Configuration</CardTitle>
+                <Button size="sm" onClick={handleSave} disabled={saving}>
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto space-y-6 p-6">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Input Schema (JSON)
+                        <span className="ml-2 text-xs text-gray-500 font-normal">Define arguments (type, description)</span>
+                    </label>
+                    <textarea
+                        className="w-full h-48 font-mono text-sm p-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
+                        value={inputSchema}
+                        onChange={(e) => setInputSchema(e.target.value)}
+                        placeholder='{ "type": "object", "properties": { ... } }'
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Output Description
+                        <span className="ml-2 text-xs text-gray-500 font-normal">What does this tool return?</span>
+                    </label>
+                    <Input
+                        value={outputSchema}
+                        onChange={(e) => setOutputSchema(e.target.value)}
+                        placeholder="Returns a string containing..."
+                    />
+                </div>
+
+                {tool.handler_type === 'api' && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            API Endpoint / Handler Logic
+                        </label>
+                        <textarea
+                            className="w-full h-32 font-mono text-sm p-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
+                            value={handlerCode}
+                            onChange={(e) => setHandlerCode(e.target.value)}
+                            placeholder="https://api.example.com/v1/resource"
+                        />
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 }

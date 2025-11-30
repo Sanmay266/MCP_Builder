@@ -18,7 +18,7 @@ class Tool(ToolBase):
     project_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ProjectBase(BaseModel):
     name: str
@@ -33,4 +33,4 @@ class Project(ProjectBase):
     tools: List[Tool] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True

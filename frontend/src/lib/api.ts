@@ -70,6 +70,16 @@ export async function deleteTool(projectId: number, toolId: number): Promise<voi
     if (!res.ok) throw new Error('Failed to delete tool');
 }
 
+export async function updateTool(projectId: number, toolId: number, tool: Omit<Tool, 'id' | 'project_id'>): Promise<Tool> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/tools/${toolId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tool),
+    });
+    if (!res.ok) throw new Error('Failed to update tool');
+    return res.json();
+}
+
 export function getExportUrl(projectId: number): string {
     return `${API_BASE_URL}/projects/${projectId}/export`;
 }
