@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Save, Trash2, Download, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Trash2, Download, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { SchemaBuilder } from '@/components/SchemaBuilder';
+import { CodePreview } from '@/components/CodePreview';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -19,6 +20,7 @@ export default function ProjectBuilder() {
     const [tools, setTools] = useState<Tool[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
+    const [showPreview, setShowPreview] = useState(true);
 
     // New Tool State
     const [toolName, setToolName] = useState('');
@@ -117,6 +119,15 @@ export default function ProjectBuilder() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowPreview(!showPreview)}
+                        className="text-gray-600"
+                    >
+                        {showPreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                        {showPreview ? 'Hide Preview' : 'Show Preview'}
+                    </Button>
                     <Button variant="secondary" size="sm" onClick={() => window.open(getExportUrl(projectId), '_blank')}>
                         <Download className="w-4 h-4 mr-2" />
                         Export Server
@@ -124,9 +135,9 @@ export default function ProjectBuilder() {
                 </div>
             </header>
 
-            <main className="flex-1 p-8 grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto w-full">
+            <main className={`flex-1 p-8 grid grid-cols-1 gap-8 max-w-7xl mx-auto w-full ${showPreview ? 'lg:grid-cols-12' : 'lg:grid-cols-3'}`}>
                 {/* Left Column: Tool List & Add Tool */}
-                <div className="lg:col-span-1 space-y-6">
+                <div className={`space-y-6 ${showPreview ? 'lg:col-span-3' : 'lg:col-span-1'}`}>
                     <Card>
                         <CardHeader>
                             <CardTitle>Add New Tool</CardTitle>
@@ -187,8 +198,8 @@ export default function ProjectBuilder() {
                     </div>
                 </div>
 
-                {/* Right Column: Tool Configuration */}
-                <div className="lg:col-span-2">
+                {/* Middle Column: Tool Configuration */}
+                <div className={`${showPreview ? 'lg:col-span-5' : 'lg:col-span-2'}`}>
                     {tools.find(t => t.id === selectedToolId) ? (
                         <ToolEditor
                             tool={tools.find(t => t.id === selectedToolId)!}
@@ -206,6 +217,13 @@ export default function ProjectBuilder() {
                         </Card>
                     )}
                 </div>
+
+                {/* Right Column: Code Preview */}
+                {showPreview && (
+                    <div className="lg:col-span-4 h-[calc(100vh-12rem)]">
+                        <CodePreview tools={tools} serverName={project?.name} />
+                    </div>
+                )}
             </main>
         </div>
     );
