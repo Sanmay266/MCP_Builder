@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Plus, Save, Trash2, Download, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { SchemaBuilder } from '@/components/SchemaBuilder';
 import { CodePreview } from '@/components/CodePreview';
+import { ValidationErrors } from '@/components/ValidationErrors';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -128,7 +129,7 @@ export default function ProjectBuilder() {
                         {showPreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
                         {showPreview ? 'Hide Preview' : 'Show Preview'}
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => window.open(getExportUrl(projectId), '_blank')}>
+                    <Button variant="secondary" size="sm" onClick={() => window.open(getExportUrl(projectId), '_blank')} disabled={tools.length === 0}>
                         <Download className="w-4 h-4 mr-2" />
                         Export Server
                     </Button>
@@ -138,6 +139,8 @@ export default function ProjectBuilder() {
             <main className={`flex-1 p-8 grid grid-cols-1 gap-8 max-w-7xl mx-auto w-full ${showPreview ? 'lg:grid-cols-12' : 'lg:grid-cols-3'}`}>
                 {/* Left Column: Tool List & Add Tool */}
                 <div className={`space-y-6 ${showPreview ? 'lg:col-span-3' : 'lg:col-span-1'}`}>
+                    <ValidationErrors tools={tools} />
+                    
                     <Card>
                         <CardHeader>
                             <CardTitle>Add New Tool</CardTitle>
