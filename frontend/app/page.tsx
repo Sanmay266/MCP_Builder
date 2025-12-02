@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { getProjects, createProject, deleteProject, Project } from '@/lib/api';
+import { ProjectListSkeleton, Spinner } from '@/components/ui/Skeleton';
 
 export default function Dashboard() {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -85,7 +86,12 @@ export default function Dashboard() {
                                     onChange={(e) => setNewProjectName(e.target.value)}
                                 />
                                 <Button type="submit" className="w-full" disabled={creating || !newProjectName.trim()}>
-                                    {creating ? 'Creating...' : (
+                                    {creating ? (
+                                        <>
+                                            <Spinner className="w-4 h-4 mr-2" />
+                                            Creating...
+                                        </>
+                                    ) : (
                                         <>
                                             <Plus className="w-4 h-4 mr-2" />
                                             Create Project
@@ -101,7 +107,7 @@ export default function Dashboard() {
                         <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Projects</h2>
 
                         {loading ? (
-                            <div className="text-center py-10 text-gray-500">Loading projects...</div>
+                            <ProjectListSkeleton />
                         ) : projects.length === 0 ? (
                             <div className="text-center py-10 bg-white rounded-lg border border-dashed border-gray-300 text-gray-500">
                                 No projects yet. Create one to get started.

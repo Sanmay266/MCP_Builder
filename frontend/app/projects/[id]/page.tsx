@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Save, Trash2, Download, CheckCircle, Eye, EyeOff } fro
 import { SchemaBuilder } from '@/components/SchemaBuilder';
 import { CodePreview } from '@/components/CodePreview';
 import { ValidationErrors } from '@/components/ValidationErrors';
+import { ToolListSkeleton, Spinner } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -103,7 +104,14 @@ export default function ProjectBuilder() {
         }
     }
 
-    if (loading) return <div className="p-8 text-center">Loading...</div>;
+    if (loading) return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                <Spinner className="w-8 h-8 text-gray-600" />
+                <p className="text-gray-500">Loading project...</p>
+            </div>
+        </div>
+    );
     if (!project) return <div className="p-8 text-center">Project not found</div>;
 
     return (
@@ -269,8 +277,17 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
             <CardHeader className="border-b border-gray-100 flex flex-row items-center justify-between">
                 <CardTitle>{tool.name} Configuration</CardTitle>
                 <Button size="sm" onClick={handleSave} disabled={saving}>
-                    <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Saving...' : 'Save Changes'}
+                    {saving ? (
+                        <>
+                            <Spinner className="w-4 h-4 mr-2" />
+                            Saving...
+                        </>
+                    ) : (
+                        <>
+                            <Save className="w-4 h-4 mr-2" />
+                            Save Changes
+                        </>
+                    )}
                 </Button>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto space-y-6 p-6">
