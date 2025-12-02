@@ -8,6 +8,8 @@ import { SchemaBuilder } from '@/components/SchemaBuilder';
 import { CodePreview } from '@/components/CodePreview';
 import { ValidationErrors } from '@/components/ValidationErrors';
 import { ToolListSkeleton, Spinner } from '@/components/ui/Skeleton';
+import { TemplateLibrary } from '@/components/TemplateLibrary';
+import { ToolTemplate } from '@/lib/templates';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -23,6 +25,7 @@ export default function ProjectBuilder() {
     const [loading, setLoading] = useState(true);
     const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
     const [showPreview, setShowPreview] = useState(true);
+    const [showTemplates, setShowTemplates] = useState(false);
 
     // New Tool State
     const [toolName, setToolName] = useState('');
@@ -104,6 +107,26 @@ export default function ProjectBuilder() {
         }
     }
 
+    async function handleSelectTemplate(template: ToolTemplate) {
+        try {
+            const newTool = await createTool(projectId, {
+                name: template.name,
+                description: template.description,
+                handler_type: template.handler_type,
+                input_schema: template.input_schema,
+                output_schema: template.output_schema,
+                handler_code: template.handler_code || ""
+            });
+
+            const toolsData = await getTools(projectId);
+            setTools(toolsData);
+            setSelectedToolId(newTool.id);
+            setShowTemplates(false);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     if (loading) return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
@@ -148,6 +171,15 @@ export default function ProjectBuilder() {
                 {/* Left Column: Tool List & Add Tool */}
                 <div className={`space-y-6 ${showPreview ? 'lg:col-span-3' : 'lg:col-span-1'}`}>
                     <ValidationErrors tools={tools} />
+                    
+                    <Button 
+                        variant="secondary" 
+                        className="w-full" 
+                        onClick={() => setShowTemplates(true)}
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Browse Tool Templates
+                    </Button>
                     
                     <Card>
                         <CardHeader>
@@ -236,6 +268,14 @@ export default function ProjectBuilder() {
                     </div>
                 )}
             </main>
+
+            {/* Template Library Modal */}
+            {showTemplates && (
+                <TemplateLibrary
+                    onSelect={handleSelectTemplate}
+                    onClose={() => setShowTemplates(false)}
+                />
+            )}
         </div>
     );
 }
