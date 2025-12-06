@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { getProject, getTools, createTool, deleteTool, updateTool, getExportUrl, Project, Tool } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export default function ProjectBuilder() {
     const params = useParams();
@@ -31,6 +33,7 @@ export default function ProjectBuilder() {
     const [toolName, setToolName] = useState('');
     const [toolDescription, setToolDescription] = useState('');
     const [handlerType, setHandlerType] = useState('static');
+    const { showToast } = useToast();
 
     useEffect(() => {
         if (projectId) {
@@ -48,6 +51,7 @@ export default function ProjectBuilder() {
             setTools(toolsData);
         } catch (error) {
             console.error(error);
+            showToast('Failed to load project', 'error');
         } finally {
             setLoading(false);
         }
@@ -76,8 +80,10 @@ export default function ProjectBuilder() {
             const toolsData = await getTools(projectId);
             setTools(toolsData);
             setSelectedToolId(newTool.id);
+            showToast('Tool added successfully', 'success');
         } catch (error) {
             console.error(error);
+            showToast('Failed to add tool', 'error');
         }
     }
 
@@ -90,8 +96,10 @@ export default function ProjectBuilder() {
             if (selectedToolId === toolId) {
                 setSelectedToolId(null);
             }
+            showToast('Tool deleted', 'success');
         } catch (error) {
             console.error(error);
+            showToast('Failed to delete tool', 'error');
         }
     }
 
@@ -102,8 +110,10 @@ export default function ProjectBuilder() {
             setTools(prevTools => prevTools.map(tool =>
                 tool.id === updatedTool.id ? updatedTool : tool
             ));
+            showToast('Tool saved', 'success');
         } catch (error) {
             console.error("Error updating tool:", error);
+            showToast('Failed to save tool', 'error');
         }
     }
 
@@ -122,40 +132,43 @@ export default function ProjectBuilder() {
             setTools(toolsData);
             setSelectedToolId(newTool.id);
             setShowTemplates(false);
+            showToast(`Added "${template.name}" from templates`, 'success');
         } catch (error) {
             console.error(error);
+            showToast('Failed to add template', 'error');
         }
     }
 
     if (loading) return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
-                <Spinner className="w-8 h-8 text-gray-600" />
-                <p className="text-gray-500">Loading project...</p>
+                <Spinner className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+                <p className="text-gray-500 dark:text-gray-400">Loading project...</p>
             </div>
         </div>
     );
-    if (!project) return <div className="p-8 text-center">Project not found</div>;
+    if (!project) return <div className="p-8 text-center dark:text-white">Project not found</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
             {/* Header */}
-            <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+            <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-4">
-                    <Link href="/" className="text-gray-500 hover:text-gray-900">
+                    <Link href="/" className="text-gray-500 hover:text-gray-900 dark:hover:text-white">
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
-                        <p className="text-xs text-gray-500">MCP Server Project</p>
+                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">{project.name}</h1>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">MCP Server Project</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    <ThemeToggle />
                     <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={() => setShowPreview(!showPreview)}
-                        className="text-gray-600"
+                        className="text-gray-600 dark:text-gray-400"
                     >
                         {showPreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
                         {showPreview ? 'Hide Preview' : 'Show Preview'}
