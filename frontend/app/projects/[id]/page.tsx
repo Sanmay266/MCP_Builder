@@ -213,9 +213,9 @@ export default function ProjectBuilder() {
                                     onChange={(e) => setToolDescription(e.target.value)}
                                 />
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Handler Type</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Handler Type</label>
                                     <select
-                                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                                        className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
                                         value={handlerType}
                                         onChange={(e) => setHandlerType(e.target.value)}
                                     >
@@ -232,19 +232,19 @@ export default function ProjectBuilder() {
                     </Card>
 
                     <div className="space-y-3">
-                        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Defined Tools</h3>
+                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Defined Tools</h3>
                         {tools.length === 0 && (
-                            <p className="text-sm text-gray-400 italic">No tools defined yet.</p>
+                            <p className="text-sm text-gray-400 dark:text-gray-500 italic">No tools defined yet.</p>
                         )}
                         {tools.map((tool) => (
                             <div
                                 key={tool.id}
-                                className={`bg-white p-4 rounded-lg border shadow-sm flex justify-between items-center group hover:border-black transition-colors cursor-pointer ${selectedToolId === tool.id ? 'border-black ring-2 ring-black' : 'border-gray-200'}`}
+                                className={`bg-white dark:bg-gray-800 p-4 rounded-lg border shadow-sm flex justify-between items-center group hover:border-black dark:hover:border-white transition-colors cursor-pointer ${selectedToolId === tool.id ? 'border-black dark:border-white ring-2 ring-black dark:ring-white' : 'border-gray-200 dark:border-gray-700'}`}
                                 onClick={() => setSelectedToolId(tool.id)}
                             >
                                 <div>
-                                    <p className="font-medium text-gray-900">{tool.name}</p>
-                                    <p className="text-xs text-gray-500 truncate max-w-[200px]">{tool.description || 'No description'}</p>
+                                    <p className="font-medium text-gray-900 dark:text-white">{tool.name}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{tool.description || 'No description'}</p>
                                 </div>
                                 <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteTool(tool.id); }} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600">
                                     <Trash2 className="w-4 h-4" />
@@ -263,11 +263,11 @@ export default function ProjectBuilder() {
                         />
                     ) : (
                         <Card className="h-full min-h-[500px] flex flex-col justify-center items-center text-center p-12 border-dashed">
-                            <div className="bg-gray-50 p-4 rounded-full mb-4">
+                            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-full mb-4">
                                 <CheckCircle className="w-8 h-8 text-gray-400" />
                             </div>
-                            <h3 className="text-lg font-medium text-gray-900">Select a tool to configure</h3>
-                            <p className="text-gray-500 max-w-md mt-2">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Select a tool to configure</h3>
+                            <p className="text-gray-500 dark:text-gray-400 max-w-md mt-2">
                                 Click on a tool from the list on the left to edit its input schema, output description, and handler logic.
                             </p>
                         </Card>
@@ -350,9 +350,9 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
                 />
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Output Description
-                        <span className="ml-2 text-xs text-gray-500 font-normal">What does this tool return?</span>
+                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-normal">What does this tool return?</span>
                     </label>
                     <Input
                         value={outputSchema}
@@ -363,11 +363,11 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
 
                 {tool.handler_type === 'api' && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             API Endpoint / Handler Logic
                         </label>
                         <textarea
-                            className="w-full h-32 font-mono text-sm p-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
+                            className="w-full h-32 font-mono text-sm p-4 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
                             value={handlerCode}
                             onChange={(e) => setHandlerCode(e.target.value)}
                             placeholder="https://api.example.com/v1/resource"
