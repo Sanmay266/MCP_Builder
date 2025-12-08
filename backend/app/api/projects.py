@@ -62,3 +62,55 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
     db.delete(project)
     db.commit()
     return {"ok": True}
+
+@router.get("/{project_id}/export-json")
+def export_project_json(project_id: int, db: Session = Depends(get_db)):
+    """Export project as JSON for backup"""
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    tools = db.query(models.Tool).filter(models.Tool.project_id == project_id).all()
+    
+    export_data = {
+        "name": project.name,
+        "created_at": project.created_at.isoformat(),
+        "tools": [
+            {
+                "name": t.name,
+                "description": t.description,
+                "input_schema": json.loads(t.input_schema) if t.input_schema else {},
+                "output_schema": t.output_schema,
+                "handler_type": t.handler_type,
+                "handler_code": t.handler_code
+            }
+            for t in tools
+        ]
+    }
+    
+    return export_data
+
+@router.post("/import-json")
+def import_project_json(project_data: dict, db: Session = Depends(get_db)):
+    """Import project from JSON backup"""
+    # Create project
+    db_project = models.Project(name=project_data["name"])
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    
+    # Create tools
+    for tool_data in project_data.get("tools", []):
+        db_tool = models.Tool(
+            project_id=db_project.id,
+            name=tool_data["name"],
+            description=tool_data.get("description"),
+            input_schema=json.dumps(tool_data.get("input_schema", {})),
+            output_schema=tool_data.get("output_schema"),
+            handler_type=tool_data["handler_type"],
+            handler_code=tool_data.get("handler_code")
+        )
+        db.add(db_tool)
+    
+    db.commit()
+    return {"id": db_project.id, "message": "Project imported successfully"}
