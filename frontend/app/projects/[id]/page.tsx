@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Save, Trash2, Download, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Trash2, Download, CheckCircle, Eye, EyeOff, FileJson } from 'lucide-react';
 import { SchemaBuilder } from '@/components/SchemaBuilder';
 import { CodePreview } from '@/components/CodePreview';
 import { ValidationErrors } from '@/components/ValidationErrors';
@@ -13,7 +13,7 @@ import { ToolTemplate } from '@/lib/templates';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { getProject, getTools, createTool, deleteTool, updateTool, getExportUrl, Project, Tool } from '@/lib/api';
+import { getProject, getTools, createTool, deleteTool, updateTool, getExportUrl, exportProjectJSON, Project, Tool } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
@@ -139,6 +139,23 @@ export default function ProjectBuilder() {
         }
     }
 
+    async function handleExportJSON() {
+        try {
+            const data = await exportProjectJSON(projectId);
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${project?.name || 'project'}-backup.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Project exported as JSON', 'success');
+        } catch (error) {
+            console.error(error);
+            showToast('Failed to export project', 'error');
+        }
+    }
+
     if (loading) return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
@@ -172,6 +189,10 @@ export default function ProjectBuilder() {
                     >
                         {showPreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
                         {showPreview ? 'Hide Preview' : 'Show Preview'}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleExportJSON}>
+                        <FileJson className="w-4 h-4 mr-2" />
+                        Backup
                     </Button>
                     <Button variant="secondary" size="sm" onClick={() => window.open(getExportUrl(projectId), '_blank')} disabled={tools.length === 0}>
                         <Download className="w-4 h-4 mr-2" />

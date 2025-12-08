@@ -83,3 +83,19 @@ export async function updateTool(projectId: number, toolId: number, tool: Omit<T
 export function getExportUrl(projectId: number): string {
     return `${API_BASE_URL}/projects/${projectId}/export`;
 }
+
+export async function exportProjectJSON(projectId: number): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/export-json`);
+    if (!res.ok) throw new Error('Failed to export project');
+    return res.json();
+}
+
+export async function importProjectJSON(projectData: any): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/projects/import-json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projectData),
+    });
+    if (!res.ok) throw new Error('Failed to import project');
+    return res.json();
+}
