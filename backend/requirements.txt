@@ -4,3 +4,7 @@ sqlalchemy
 pydantic
 python-multipart
 jinja2
+psycopg2-binary
+python-dotenv
+httpx
+slowapi
