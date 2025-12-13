@@ -9,6 +9,7 @@ import { CodePreview } from '@/components/CodePreview';
 import { ValidationErrors } from '@/components/ValidationErrors';
 import { ToolListSkeleton, Spinner } from '@/components/ui/Skeleton';
 import { TemplateLibrary } from '@/components/TemplateLibrary';
+import { ToolTester } from '@/components/ToolTester';
 import { ToolTemplate } from '@/lib/templates';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -319,6 +320,7 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
     const [outputSchema, setOutputSchema] = useState(tool.output_schema || '');
     const [handlerCode, setHandlerCode] = useState(tool.handler_code || '');
     const [saving, setSaving] = useState(false);
+    const [activeTab, setActiveTab] = useState<'configure' | 'test'>('configure');
 
     // Update local state when tool changes
     useEffect(() => {
@@ -347,55 +349,91 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
     }
 
     return (
-        <Card className="h-full flex flex-col">
-            <CardHeader className="border-b border-gray-100 flex flex-row items-center justify-between">
-                <CardTitle>{tool.name} Configuration</CardTitle>
-                <Button size="sm" onClick={handleSave} disabled={saving}>
-                    {saving ? (
-                        <>
-                            <Spinner className="w-4 h-4 mr-2" />
-                            Saving...
-                        </>
-                    ) : (
-                        <>
-                            <Save className="w-4 h-4 mr-2" />
-                            Save Changes
-                        </>
-                    )}
-                </Button>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto space-y-6 p-6">
-                <SchemaBuilder
-                    value={inputSchema}
-                    onChange={setInputSchema}
-                />
+        <div className="h-full flex flex-col space-y-4">
+            {/* Tabs */}
+            <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800">
+                <button
+                    onClick={() => setActiveTab('configure')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'configure'
+                            ? 'border-black dark:border-white text-gray-900 dark:text-white'
+                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
+                >
+                    Configure
+                </button>
+                <button
+                    onClick={() => setActiveTab('test')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'test'
+                            ? 'border-black dark:border-white text-gray-900 dark:text-white'
+                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
+                >
+                    Test
+                </button>
+            </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Output Description
-                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-normal">What does this tool return?</span>
-                    </label>
-                    <Input
-                        value={outputSchema}
-                        onChange={(e) => setOutputSchema(e.target.value)}
-                        placeholder="Returns a string containing..."
-                    />
-                </div>
-
-                {tool.handler_type === 'api' && (
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            API Endpoint / Handler Logic
-                        </label>
-                        <textarea
-                            className="w-full h-32 font-mono text-sm p-4 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
-                            value={handlerCode}
-                            onChange={(e) => setHandlerCode(e.target.value)}
-                            placeholder="https://api.example.com/v1/resource"
+            {/* Configure Tab */}
+            {activeTab === 'configure' && (
+                <Card className="flex-1 flex flex-col">
+                    <CardHeader className="border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between">
+                        <CardTitle>{tool.name} Configuration</CardTitle>
+                        <Button size="sm" onClick={handleSave} disabled={saving}>
+                            {saving ? (
+                                <>
+                                    <Spinner className="w-4 h-4 mr-2" />
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4 mr-2" />
+                                    Save Changes
+                                </>
+                            )}
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="flex-1 overflow-y-auto space-y-6 p-6">
+                        <SchemaBuilder
+                            value={inputSchema}
+                            onChange={setInputSchema}
                         />
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Output Description
+                                <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-normal">What does this tool return?</span>
+                            </label>
+                            <Input
+                                value={outputSchema}
+                                onChange={(e) => setOutputSchema(e.target.value)}
+                                placeholder="Returns a string containing..."
+                            />
+                        </div>
+
+                        {tool.handler_type === 'api' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    API Endpoint / Handler Logic
+                                </label>
+                                <textarea
+                                    className="w-full h-32 font-mono text-sm p-4 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                                    value={handlerCode}
+                                    onChange={(e) => setHandlerCode(e.target.value)}
+                                    placeholder="https://api.example.com/v1/resource"
+                                />
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Test Tab */}
+            {activeTab === 'test' && (
+                <div className="flex-1 overflow-y-auto">
+                    <ToolTester projectId={parseInt(tool.project_id?.toString() || '0')} tool={tool} />
+                </div>
+            )}
+        </div>
     );
 }
