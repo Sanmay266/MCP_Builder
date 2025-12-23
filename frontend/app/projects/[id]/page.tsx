@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/Input';
 import { getProject, getTools, createTool, deleteTool, updateTool, getExportUrl, exportProjectJSON, Project, Tool } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useWebSocket } from '@/lib/useWebSocket';
 
 export default function ProjectBuilder() {
     const params = useParams();
@@ -29,6 +30,7 @@ export default function ProjectBuilder() {
     const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
     const [showPreview, setShowPreview] = useState(true);
     const [showTemplates, setShowTemplates] = useState(false);
+    const [remoteCode, setRemoteCode] = useState<string | null>(null);
 
     // New Tool State
     const [toolName, setToolName] = useState('');
@@ -36,11 +38,25 @@ export default function ProjectBuilder() {
     const [handlerType, setHandlerType] = useState('static');
     const { showToast } = useToast();
 
+    // Hot Reload via WebSocket
+    const { lastMessage } = useWebSocket(projectId);
+
+    useEffect(() => {
+        if (lastMessage?.type === 'code_update' && lastMessage.code) {
+            setRemoteCode(lastMessage.code);
+        }
+    }, [lastMessage]);
+
     useEffect(() => {
         if (projectId) {
             loadData();
         }
     }, [projectId]);
+
+    // ... (existing loadData and handlers)
+
+    // ... (inside JSX)
+
 
     async function loadData() {
         try {
@@ -299,7 +315,7 @@ export default function ProjectBuilder() {
                 {/* Right Column: Code Preview */}
                 {showPreview && (
                     <div className="lg:col-span-4 h-[calc(100vh-12rem)]">
-                        <CodePreview tools={tools} serverName={project?.name} />
+                        <CodePreview tools={tools} serverName={project?.name} remoteCode={remoteCode} />
                     </div>
                 )}
             </main>
@@ -355,8 +371,8 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
                 <button
                     onClick={() => setActiveTab('configure')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'configure'
-                            ? 'border-black dark:border-white text-gray-900 dark:text-white'
-                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                        ? 'border-black dark:border-white text-gray-900 dark:text-white'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                 >
                     Configure
@@ -364,8 +380,8 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
                 <button
                     onClick={() => setActiveTab('test')}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'test'
-                            ? 'border-black dark:border-white text-gray-900 dark:text-white'
-                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                        ? 'border-black dark:border-white text-gray-900 dark:text-white'
+                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                 >
                     Test

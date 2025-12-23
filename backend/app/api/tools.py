@@ -1,14 +1,41 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 from .. import models, schemas
 from ..database import get_db
+from ..core import generator
+from .websocket import manager
 import json
+import time
 
 router = APIRouter()
 
+async def broadcast_code_update(project_id: int, db: Session):
+    """Generate latest server code and broadcast to connected clients"""
+    tools = db.query(models.Tool).filter(models.Tool.project_id == project_id).all()
+    
+    tools_data = []
+    for t in tools:
+        t_dict = {
+            'name': t.name,
+            'description': t.description,
+            'input_schema': json.loads(t.input_schema) if t.input_schema else {},
+            'output_schema': t.output_schema,
+            'handler_type': t.handler_type,
+            'handler_code': t.handler_code
+        }
+        tools_data.append(t_dict)
+        
+    code = generator.generate_server_py(tools_data)
+    
+    await manager.broadcast(project_id, {
+        "type": "code_update",
+        "code": code,
+        "timestamp": time.time()
+    })
+
 @router.post("/{project_id}/tools/", response_model=schemas.Tool)
-def create_tool(project_id: int, tool: schemas.ToolCreate, db: Session = Depends(get_db)):
+async def create_tool(project_id: int, tool: schemas.ToolCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -28,6 +55,9 @@ def create_tool(project_id: int, tool: schemas.ToolCreate, db: Session = Depends
     db.add(db_tool)
     db.commit()
     db.refresh(db_tool)
+    
+    # Broadcast update
+    await broadcast_code_update(project_id, db)
     
     return {
         'id': db_tool.id,
@@ -65,7 +95,7 @@ def read_tools(project_id: int, db: Session = Depends(get_db)):
     return result
 
 @router.put("/{project_id}/tools/{tool_id}", response_model=schemas.Tool)
-def update_tool(project_id: int, tool_id: int, tool: schemas.ToolCreate, db: Session = Depends(get_db)):
+async def update_tool(project_id: int, tool_id: int, tool: schemas.ToolCreate, db: Session = Depends(get_db)):
     db_tool = db.query(models.Tool).filter(
         models.Tool.id == tool_id, 
         models.Tool.project_id == project_id
@@ -84,6 +114,9 @@ def update_tool(project_id: int, tool_id: int, tool: schemas.ToolCreate, db: Ses
     
     db.commit()
     db.refresh(db_tool)
+    
+    # Broadcast update
+    await broadcast_code_update(project_id, db)
     
     # Parse input_schema back to dict for response
     input_schema = {}
@@ -105,10 +138,14 @@ def update_tool(project_id: int, tool_id: int, tool: schemas.ToolCreate, db: Ses
     }
 
 @router.delete("/{project_id}/tools/{tool_id}")
-def delete_tool(project_id: int, tool_id: int, db: Session = Depends(get_db)):
+async def delete_tool(project_id: int, tool_id: int, db: Session = Depends(get_db)):
     tool = db.query(models.Tool).filter(models.Tool.id == tool_id, models.Tool.project_id == project_id).first()
     if tool is None:
         raise HTTPException(status_code=404, detail="Tool not found")
     db.delete(tool)
     db.commit()
+    
+    # Broadcast update
+    await broadcast_code_update(project_id, db)
+    
     return {"ok": True}

@@ -70,9 +70,10 @@ def database_health(db: Session = Depends(get_db)):
     except Exception as e:
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
 
-from .api import projects, tools, generator, sandbox
+from .api import projects, tools, generator, sandbox, websocket
 
 app.include_router(projects.router, prefix="/projects", tags=["projects"])
 app.include_router(tools.router, prefix="/projects", tags=["tools"])
 app.include_router(generator.router, prefix="/projects", tags=["generator"])
 app.include_router(sandbox.router, prefix="/projects", tags=["sandbox"])
+app.include_router(websocket.router, tags=["websocket"])
