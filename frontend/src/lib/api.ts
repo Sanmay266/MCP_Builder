@@ -99,3 +99,11 @@ export async function importProjectJSON(projectData: any): Promise<any> {
     if (!res.ok) throw new Error('Failed to import project');
     return res.json();
 }
+
+export async function validateProject(projectId: number): Promise<{ valid: boolean; errors: string[]; warnings: string[] }> {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/validate`, {
+        method: 'POST',
+    });
+    if (!res.ok) throw new Error('Failed to validate project');
+    return res.json();
+}

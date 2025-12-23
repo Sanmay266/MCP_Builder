@@ -182,9 +182,9 @@ export default function ProjectBuilder() {
                 </div>
                 <div className="flex items-center gap-3">
                     <ThemeToggle />
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setShowPreview(!showPreview)}
                         className="text-gray-600 dark:text-gray-400"
                     >
@@ -205,17 +205,17 @@ export default function ProjectBuilder() {
             <main className={`flex-1 p-8 grid grid-cols-1 gap-8 max-w-7xl mx-auto w-full ${showPreview ? 'lg:grid-cols-12' : 'lg:grid-cols-3'}`}>
                 {/* Left Column: Tool List & Add Tool */}
                 <div className={`space-y-6 ${showPreview ? 'lg:col-span-3' : 'lg:col-span-1'}`}>
-                    <ValidationErrors tools={tools} />
-                    
-                    <Button 
-                        variant="secondary" 
-                        className="w-full" 
+                    <ValidationErrors tools={tools} projectId={projectId} />
+
+                    <Button
+                        variant="secondary"
+                        className="w-full"
                         onClick={() => setShowTemplates(true)}
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Browse Tool Templates
                     </Button>
-                    
+
                     <Card>
                         <CardHeader>
                             <CardTitle>Add New Tool</CardTitle>
@@ -354,21 +354,19 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
             <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800">
                 <button
                     onClick={() => setActiveTab('configure')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                        activeTab === 'configure'
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'configure'
                             ? 'border-black dark:border-white text-gray-900 dark:text-white'
                             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                    }`}
+                        }`}
                 >
                     Configure
                 </button>
                 <button
                     onClick={() => setActiveTab('test')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                        activeTab === 'test'
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'test'
                             ? 'border-black dark:border-white text-gray-900 dark:text-white'
                             : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                    }`}
+                        }`}
                 >
                     Test
                 </button>

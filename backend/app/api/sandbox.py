@@ -54,10 +54,10 @@ def execute_static_tool(tool: models.Tool, inputs: dict) -> Dict[str, Any]:
     }
 
 
+import httpx
+
 async def execute_api_tool(tool: models.Tool, inputs: dict) -> Dict[str, Any]:
     """Execute API call tool"""
-    import httpx
-
     start = time.time()
 
     try:
