@@ -30,7 +30,8 @@ export default function ProjectBuilder() {
     const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
     const [showPreview, setShowPreview] = useState(true);
     const [showTemplates, setShowTemplates] = useState(false);
-    const [remoteCode, setRemoteCode] = useState<string | null>(null);
+    const [generatedCode, setGeneratedCode] = useState<string>('');
+    const [codeGenerating, setCodeGenerating] = useState(false);
 
     // New Tool State
     const [toolName, setToolName] = useState('');
@@ -38,14 +39,22 @@ export default function ProjectBuilder() {
     const [handlerType, setHandlerType] = useState('static');
     const { showToast } = useToast();
 
-    // Hot Reload via WebSocket
-    const { lastMessage } = useWebSocket(projectId);
-
+    // Hot Reload: Auto-regenerate code when tools change
     useEffect(() => {
-        if (lastMessage?.type === 'code_update' && lastMessage.code) {
-            setRemoteCode(lastMessage.code);
-        }
-    }, [lastMessage]);
+        // Debounce code generation to avoid excessive updates
+        const timer = setTimeout(() => {
+            if (tools.length > 0) {
+                setCodeGenerating(true);
+                // Generate code locally for instant feedback
+                import('@/components/CodePreview').then(module => {
+                    // Code generation happens in CodePreview component
+                    setCodeGenerating(false);
+                });
+            }
+        }, 300); // 300ms debounce
+
+        return () => clearTimeout(timer);
+    }, [tools, project?.name]);
 
     useEffect(() => {
         if (projectId) {
@@ -315,7 +324,15 @@ export default function ProjectBuilder() {
                 {/* Right Column: Code Preview */}
                 {showPreview && (
                     <div className="lg:col-span-4 h-[calc(100vh-12rem)]">
-                        <CodePreview tools={tools} serverName={project?.name} remoteCode={remoteCode} />
+                        <div className="relative h-full">
+                            {codeGenerating && (
+                                <div className="absolute top-2 right-2 z-10 bg-blue-500 text-white text-xs px-2 py-1 rounded-md flex items-center gap-1">
+                                    <Spinner className="w-3 h-3" />
+                                    Updating...
+                                </div>
+                            )}
+                            <CodePreview tools={tools} serverName={project?.name} />
+                        </div>
                     </div>
                 )}
             </main>
@@ -344,6 +361,31 @@ function ToolEditor({ tool, onUpdate }: { tool: Tool, onUpdate: (tool: Tool) => 
         setOutputSchema(tool.output_schema || '');
         setHandlerCode(tool.handler_code || '');
     }, [tool.id]);
+
+    // Auto-update tool in parent state for live preview (debounced)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const updatedTool: Tool = {
+                ...tool,
+                input_schema: inputSchema,
+                output_schema: outputSchema,
+                handler_code: handlerCode
+            };
+            
+            // Only trigger if something actually changed
+            const hasChanges = 
+                JSON.stringify(inputSchema) !== JSON.stringify(tool.input_schema) ||
+                outputSchema !== tool.output_schema ||
+                handlerCode !== tool.handler_code;
+            
+            if (hasChanges) {
+                // Update parent state for preview (without saving to backend)
+                onUpdate(updatedTool);
+            }
+        }, 500); // 500ms debounce for typing
+
+        return () => clearTimeout(timer);
+    }, [inputSchema, outputSchema, handlerCode]);
 
     async function handleSave() {
         setSaving(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Copy, Check, Code, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -15,7 +15,6 @@ interface Tool {
 interface CodePreviewProps {
     tools: Tool[];
     serverName?: string;
-    remoteCode?: string | null;
 }
 
 const TYPE_MAP: Record<string, string> = {
@@ -103,12 +102,17 @@ ${body}
     return code;
 }
 
-export function CodePreview({ tools, serverName, remoteCode }: CodePreviewProps) {
+export function CodePreview({ tools, serverName }: CodePreviewProps) {
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<'server' | 'config'>('server');
+    const [code, setCode] = useState('');
 
-    // Use remoteCode if available, otherwise generate locally
-    const serverCode = remoteCode || generateServerCode(tools, serverName);
+    // Auto-regenerate code when tools or serverName changes
+    useEffect(() => {
+        const newCode = generateServerCode(tools, serverName);
+        setCode(newCode);
+    }, [tools, serverName]);
+
     const configJson = JSON.stringify({
         name: serverName || "My MCP Server",
         version: "1.0.0",
@@ -119,7 +123,7 @@ export function CodePreview({ tools, serverName, remoteCode }: CodePreviewProps)
         }))
     }, null, 2);
 
-    const currentCode = activeTab === 'server' ? serverCode : configJson;
+    const currentCode = activeTab === 'server' ? code : configJson;
 
     async function handleCopy() {
         await navigator.clipboard.writeText(currentCode);
